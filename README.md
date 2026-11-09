@@ -5,6 +5,48 @@ A tiny macOS menu-bar app that puts circles on either side of the MacBook notch
 
 ![sample](Assets/sample.gif)
 
+## Screenshots
+
+Every face the notch can wear, as the app draws it on a 14" MacBook Pro.
+
+**Notch shapes** · Original, Rounded, Island (pill), Square, Wide, and the circles attached to the notch
+
+![Original](Assets/screenshots/shape-original.png)
+![Rounded](Assets/screenshots/shape-rounded.png)
+![Island](Assets/screenshots/shape-island.png)
+![Square](Assets/screenshots/shape-square.png)
+![Wide](Assets/screenshots/shape-wide.png)
+![Attached circles](Assets/screenshots/shape-attached.png)
+
+**System stats mode** · the left circle is a live gauge, the right one shows ❄️ below your threshold and 🔥 above it
+
+![Stats, below threshold](Assets/screenshots/stats-cold.png)
+![Stats, above threshold](Assets/screenshots/stats-hot.png)
+
+**Weather mode** · temperature and condition in the right circle, with or without the stats gauge
+
+![Weather with stats](Assets/screenshots/weather.png)
+![Weather only](Assets/screenshots/weather-plain.png)
+
+**Dynamic Island on an external display** · floating pill, or hanging from the top edge like a notch
+
+![Floating island](Assets/screenshots/island.png)
+![Hanging island](Assets/screenshots/island-hanging.png)
+
+**The expanded panel** · click the gauge: Stats, Weather, Mic and Camera tabs, plus screenshot, record and settings buttons
+
+| Stats tab | Weather tab |
+|---|---|
+| ![Stats tab](Assets/screenshots/panel-stats.png) | ![Weather tab](Assets/screenshots/panel-weather.png) |
+
+| Mic tab | Camera tab |
+|---|---|
+| ![Mic tab](Assets/screenshots/panel-mic.png) | ![Camera tab](Assets/screenshots/panel-camera.png) |
+
+The images are rendered by the app's own view code (`Tools/render-screenshots.swift`) on a mock
+desktop, so they stay in step with the source; the particle animations and the live camera
+feed are stand-ins.
+
 ## Features
 
 - **Circles beside the notch** – a tinted disc on each side of the notch. Show or hide
