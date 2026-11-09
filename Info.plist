@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>NotchOrbit</string>
+	<key>CFBundleExecutable</key>
+	<string>NotchOrbit</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.talha.NotchOrbit</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>NotchOrbit</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.3.0</string>
+	<key>CFBundleVersion</key>
+	<string>4</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.utilities</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>13.0</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>NotchOrbit shows a live preview of your camera in the Camera tab of the stats panel.</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2026 Talha. All rights reserved.</string>
+	<key>NSLocationUsageDescription</key>
+	<string>NotchOrbit uses your approximate location to show the local weather in the circle beside the notch.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>NotchOrbit uses your approximate location to show the local weather in the circle beside the notch.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>NotchOrbit shows a live microphone level meter in the Camera tab and applies voice effects, playthrough and voice recording in the Mic tab of the stats panel.</string>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
+</dict>
+</plist>
