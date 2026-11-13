@@ -11,7 +11,7 @@ with a black overlay, gives notch-less displays a Dynamic Island, and expands in
 panel with system graphs, a weather scene, a voice changer and a webcam tab with an
 optional, consent-gated face swap.
 
-Version 2.0.0 · macOS 13 or later · Apple silicon and Intel · no third-party dependencies
+Version 2.0.1 · macOS 13 or later · Apple silicon and Intel · no third-party dependencies
 
 ![sample](Assets/sample.gif)
 
@@ -126,7 +126,7 @@ macOS asks for each permission the first time the feature that needs it is used:
 
 The current state of each is shown under Settings › General › Privacy. The app's version
 is shown at the top of the menu-bar menu, in the Settings sidebar and under Settings ›
-General › About.
+General › About, which also credits the developer and links to the source code.
 
 ## Face Transform (optional)
 

@@ -79,6 +79,7 @@ struct SettingsView: View {
                 VStack(spacing: 2) {
                     Text("NotchOrbit").font(.caption.weight(.semibold))
                     Text("Version \(AppInfo.version)").font(.caption2).foregroundStyle(.secondary)
+                    Text("Developed by \(AppInfo.developer)").font(.caption2).foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
@@ -134,6 +135,9 @@ struct SettingsPageContainer<Content: View>: View {
 }
 
 enum AppInfo {
+    static let developer = "Muhammad Talha Tariq"
+    static let repository = URL(string: "https://github.com/MUHAMMAD-TALHA-TARIQ/NotchOrbit")!
+
     static var version: String {
         let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
@@ -1439,6 +1443,11 @@ struct GeneralPage: View {
             Section {
                 LabeledContent("Version") { Text(AppInfo.version).foregroundStyle(.secondary) }
                 LabeledContent("Requires") { Text("macOS 13 or later").foregroundStyle(.secondary) }
+                LabeledContent("Developed by") { Text(AppInfo.developer).foregroundStyle(.secondary) }
+                LabeledContent("Source code") {
+                    Link("github.com/MUHAMMAD-TALHA-TARIQ/NotchOrbit", destination: AppInfo.repository)
+                }
+                LabeledContent("License") { Text("MIT, free and open source").foregroundStyle(.secondary) }
                 HStack {
                     Spacer()
                     Button("Quit NotchOrbit") { NSApp.terminate(nil) }

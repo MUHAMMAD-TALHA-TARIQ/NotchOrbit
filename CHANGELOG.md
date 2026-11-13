@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.0.1 — 2026-11-13
+
+- Settings › General › About shows "Developed by Muhammad Talha Tariq", a link to the
+  source code and the licence; the developer credit is also in the Settings sidebar.
+
 ## 2.0.0 — 2026-11-13
 
 - Face Transform (Settings › Camera & Face Swap, off by default): the Camera tab can show
