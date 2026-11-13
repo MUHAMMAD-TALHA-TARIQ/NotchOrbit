@@ -4,6 +4,11 @@ import AVFoundation
 /// Live webcam preview for the stats panel's camera tab. The capture session only
 /// runs while the view is asked to (`start()`), so the camera light is off otherwise.
 /// A shutter button saves a mirrored still (what you see) to the configured folder.
+///
+/// During a Face Transform session the engine owns the camera: the panel hands this
+/// view the engine's capture session (`externalSession`) and it becomes the "input"
+/// feed beside the transformed output, unmirrored so the two line up. The shutter
+/// then saves the output frame (`liveSnapshot`), badge included.
 final class CameraPreviewView: NSView, AVCapturePhotoCaptureDelegate {
     private let session = AVCaptureSession()
     private let photoOutput = AVCapturePhotoOutput()
@@ -16,6 +21,40 @@ final class CameraPreviewView: NSView, AVCapturePhotoCaptureDelegate {
     private var configured = false
     private var wantsRunning = false
     private var capturing = false
+    private let captionView = FeedCaptionView()
+
+    /// Small label over the feed ("INPUT"); nil hides it.
+    var caption: String? {
+        didSet {
+            captionView.text = caption ?? ""
+            captionView.isHidden = caption == nil
+            needsLayout = true
+        }
+    }
+
+    /// A capture session owned by someone else (the Face Transform engine) to preview
+    /// instead of this view's own, which is stopped meanwhile.
+    var externalSession: AVCaptureSession? {
+        didSet {
+            guard externalSession !== oldValue else { return }
+            if let externalSession {
+                queue.async { [session] in
+                    if session.isRunning { session.stopRunning() }
+                }
+                previewLayer.session = externalSession
+                if wantsRunning {
+                    status.isHidden = true
+                    shutter.isHidden = false
+                }
+            } else {
+                previewLayer.session = session
+                if wantsRunning { beginSession() }
+            }
+        }
+    }
+
+    /// While set, the shutter saves this frame (the transformed output) instead of a camera still.
+    var liveSnapshot: (() -> (jpeg: Data, transformed: Bool)?)?
 
     /// Where captured stills go; the panel sets this from the user's settings.
     var saveDirectory = StatsSettings.defaultPhotoDirectory
@@ -51,6 +90,8 @@ final class CameraPreviewView: NSView, AVCapturePhotoCaptureDelegate {
         shutter.toolTip = "Take a picture"
         shutter.isHidden = true
         addSubview(shutter)
+        captionView.isHidden = true
+        addSubview(captionView)
         addSubview(toast)
     }
 
@@ -74,6 +115,9 @@ final class CameraPreviewView: NSView, AVCapturePhotoCaptureDelegate {
         status.frame = CGRect(x: inset.minX, y: inset.midY - height / 2, width: inset.width, height: height)
         let side = ShutterButton.size
         shutter.frame = CGRect(x: bounds.midX - side / 2, y: 10, width: side, height: side)
+        let captionSize = captionView.fittingSize
+        captionView.frame = CGRect(x: bounds.midX - captionSize.width / 2, y: bounds.maxY - captionSize.height - 8,
+                                   width: captionSize.width, height: captionSize.height)
         let toastSize = toast.fittingSize(maxWidth: bounds.width - 24)
         toast.frame = CGRect(x: bounds.midX - toastSize.width / 2, y: bounds.maxY - toastSize.height - 14,
                              width: toastSize.width, height: toastSize.height)
@@ -114,6 +158,8 @@ final class CameraPreviewView: NSView, AVCapturePhotoCaptureDelegate {
     func stop() {
         guard wantsRunning else { return }
         wantsRunning = false
+        externalSession = nil
+        liveSnapshot = nil
         status.isHidden = true
         shutter.isHidden = true
         toast.hide()
@@ -125,13 +171,18 @@ final class CameraPreviewView: NSView, AVCapturePhotoCaptureDelegate {
     // MARK: Session
 
     private func beginSession() {
+        guard externalSession == nil else {
+            status.isHidden = true
+            shutter.isHidden = false
+            return
+        }
         show("Starting camera…")
         queue.async { [weak self] in
             guard let self else { return }
             let ok = self.configureIfNeeded()
             if ok, !self.session.isRunning { self.session.startRunning() }
             DispatchQueue.main.async { [weak self] in
-                guard let self, self.wantsRunning else { return }
+                guard let self, self.wantsRunning, self.externalSession == nil else { return }
                 if ok {
                     self.status.isHidden = true
                     self.shutter.isHidden = false
@@ -180,6 +231,24 @@ final class CameraPreviewView: NSView, AVCapturePhotoCaptureDelegate {
     // MARK: Photo capture
 
     @objc private func shutterPressed() {
+        if let liveSnapshot {
+            guard let frame = liveSnapshot() else {
+                toast.show("No transformed frame yet")
+                return
+            }
+            flash()
+            do {
+                try FileManager.default.createDirectory(at: saveDirectory, withIntermediateDirectories: true)
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM-dd 'at' HH.mm.ss"
+                let name = "NotchOrbit \(formatter.string(from: Date()))\(frame.transformed ? " (AI transformed)" : "").jpg"
+                try frame.jpeg.write(to: saveDirectory.appendingPathComponent(name), options: .atomic)
+                toast.show("Output saved to \(saveDirectory.lastPathComponent) › \(name)")
+            } catch {
+                toast.show("Couldn't save: \(error.localizedDescription)")
+            }
+            return
+        }
         guard wantsRunning, !capturing, photoOutput.connection(with: .video) != nil else {
             toast.show("Camera isn't ready yet")
             return

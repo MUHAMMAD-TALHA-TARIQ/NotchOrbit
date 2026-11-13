@@ -15,6 +15,18 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 CONFIG="${1:-release}"
+
+# SwiftUI's property wrappers are macros in recent SDKs, and their compiler plugin ships
+# with Xcode, not with the Command Line Tools. If the Command Line Tools are selected,
+# use an installed Xcode for this build without changing the system setting.
+if [ -z "${DEVELOPER_DIR:-}" ] && [[ "$(xcode-select -p 2>/dev/null)" == *CommandLineTools* ]]; then
+    for candidate in /Applications/Xcode*.app; do
+        if [ -d "$candidate/Contents/Developer" ]; then
+            export DEVELOPER_DIR="$candidate/Contents/Developer"
+            break
+        fi
+    done
+fi
 APP="build/NotchOrbit.app"
 IDENTITY="${SIGN_IDENTITY:-}"
 ARCHS="${ARCHS:-arm64 x86_64}"

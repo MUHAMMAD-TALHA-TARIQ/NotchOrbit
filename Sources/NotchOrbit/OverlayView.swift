@@ -37,7 +37,7 @@ final class OverlayView: NSView {
     static let panelWidth: CGFloat = 500
     static let panelCornerRadius: CGFloat = 24
     /// Window height while the panel is expanded: its tallest layout plus the notch.
-    static let expandedHeight: CGFloat = 360
+    static let expandedHeight: CGFloat = 396
 
     override var isFlipped: Bool { true }
 

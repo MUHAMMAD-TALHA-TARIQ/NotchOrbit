@@ -19,6 +19,8 @@ final class StatsPanelView: NSView {
     static let weatherHeight: CGFloat = 252
     static let micHeight: CGFloat = 265
     static let cameraHeight: CGFloat = 265
+    /// Extra height of the Camera tab for the Face Transform control row.
+    static let faceBarHeight: CGFloat = 36
 
     var history: [StatSnapshot] = [] { didSet { needsDisplay = true } }
     var snapshot = StatSnapshot() { didSet { if snapshot != oldValue { needsDisplay = true } } }
@@ -28,6 +30,12 @@ final class StatsPanelView: NSView {
             needsDisplay = true
             if settings.cameraShape != oldValue.cameraShape || settings.photoDirectory != oldValue.photoDirectory {
                 needsLayout = true
+            }
+            faceBar?.settings = settings.face
+            if settings.face.enabled != oldValue.face.enabled {
+                syncCamera()
+                needsLayout = true
+                if tab == .camera { onPreferredHeightChange?() }
             }
             micView?.settings = settings.mic
             micView?.saveDirectory = settings.photoDirectoryURL
@@ -61,11 +69,13 @@ final class StatsPanelView: NSView {
         case .stats:   return Self.baseHeight
         case .weather: return Self.weatherHeight
         case .mic:     return Self.micHeight
-        case .camera:  return Self.cameraHeight
+        case .camera:  return Self.cameraHeight + (settings.face.enabled ? Self.faceBarHeight : 0)
         }
     }
 
     private var camera: CameraPreviewView?
+    private var faceOutput: FaceOutputView?
+    private var faceBar: FaceControlBar?
     private var mic: MicLevelView?
     private var micView: MicPanelView?
     private var weatherView: WeatherPanelView?
@@ -121,9 +131,21 @@ final class StatsPanelView: NSView {
         let area = contentArea
         mic?.frame = CGRect(x: area.maxX - micWidth, y: area.minY, width: micWidth, height: area.height)
         if let camera {
-            let cameraArea = CGRect(x: area.minX, y: area.minY, width: max(0, area.width - micWidth - 8), height: area.height)
+            var cameraArea = CGRect(x: area.minX, y: area.minY, width: max(0, area.width - micWidth - 8), height: area.height)
             camera.shape = settings.cameraShape
             camera.saveDirectory = settings.photoDirectoryURL
+            if let faceOutput, let faceBar {
+                // Face Transform: input and output feeds side by side, controls in a row below them.
+                let barHeight = Self.faceBarHeight - 8
+                faceBar.frame = CGRect(x: area.minX, y: area.maxY - barHeight, width: area.width, height: barHeight)
+                cameraArea.size.height = max(0, area.height - Self.faceBarHeight)
+                mic?.frame.size.height = cameraArea.height
+                let paneWidth = max(0, (cameraArea.width - 8) / 2)
+                let outputArea = CGRect(x: cameraArea.minX + paneWidth + 8, y: cameraArea.minY, width: paneWidth, height: cameraArea.height)
+                cameraArea.size.width = paneWidth
+                faceOutput.shape = settings.cameraShape
+                faceOutput.frame = settings.cameraShape.frame(in: outputArea)
+            }
             camera.frame = settings.cameraShape.frame(in: cameraArea)
         }
         micView?.frame = area
@@ -190,6 +212,7 @@ final class StatsPanelView: NSView {
         guard showingCamera, isShowing else {
             // Not just stopped: dropped, so the capture pipeline and audio engine don't
             // stay resident between uses.
+            removeFaceViews()
             camera?.stop(); camera?.removeFromSuperview(); camera = nil
             mic?.stop(); mic?.removeFromSuperview(); mic = nil
             return
@@ -198,6 +221,32 @@ final class StatsPanelView: NSView {
         if mic == nil { mic = install(MicLevelView(frame: .zero)) }
         camera?.start()
         mic?.start()
+        if settings.face.enabled {
+            if faceBar == nil {
+                let output = install(FaceOutputView(frame: .zero))
+                let bar = install(FaceControlBar(frame: .zero))
+                bar.output = output
+                bar.camera = camera
+                bar.onToast = { [weak self] message, duration in self?.toast.show(message, duration: duration) }
+                bar.settings = settings.face
+                faceOutput = output
+                faceBar = bar
+                camera?.caption = "INPUT"
+                bar.setActive(true)
+            }
+        } else {
+            removeFaceViews()
+        }
+    }
+
+    /// Ends the session with the panel, unless it is pinned to the virtual camera.
+    private func removeFaceViews() {
+        guard faceBar != nil else { return }
+        faceBar?.setActive(false)
+        faceBar?.removeFromSuperview(); faceBar = nil
+        faceOutput?.removeFromSuperview(); faceOutput = nil
+        camera?.caption = nil
+        needsLayout = true
     }
 
     private func syncMic() {
@@ -353,7 +402,7 @@ final class StatsPanelView: NSView {
             drawIconTab(weatherTabRect, symbol: weatherTabSymbol, selected: tab == .weather, accent: weatherAccent)
         }
         drawIconTab(micTabRect, symbol: micTabSymbol, selected: tab == .mic, accent: micAccent)
-        drawIconTab(cameraTabRect, symbol: "video.fill", selected: tab == .camera, accent: coldColor)
+        drawIconTab(cameraTabRect, symbol: cameraTabSymbol, selected: tab == .camera, accent: coldColor)
         drawIconTab(screenshotRect, symbol: "camera.viewfinder", selected: false, accent: coldColor,
                     dimmed: screenshotInFlight)
         drawRecordTab()
@@ -366,6 +415,8 @@ final class StatsPanelView: NSView {
 
     /// The tab shows the live condition when there is one.
     private var weatherTabSymbol: String { weather.reading?.symbolName() ?? "cloud.sun.fill" }
+    /// The camera tab shows masks while a face session keeps running for the virtual camera.
+    private var cameraTabSymbol: String { FaceTransform.current?.sessionState == .live && tab != .camera ? "theatermasks.fill" : "video.fill" }
     /// The mic tab shows a badge while the voice changer keeps running in the background.
     private var micTabSymbol: String { VoiceChanger.current?.state == .running && tab != .mic ? "mic.badge.plus" : "mic.fill" }
 

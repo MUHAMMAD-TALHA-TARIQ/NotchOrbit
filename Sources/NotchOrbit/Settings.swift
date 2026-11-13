@@ -272,6 +272,76 @@ struct MicSettings: Codable, Equatable {
     static let volumeRange: ClosedRange<Double> = 0...100
 }
 
+/// Quality profile of the face server's per-frame pipeline (detector size and inference width).
+enum FaceProfile: String, Codable, CaseIterable, Identifiable {
+    case fast, balanced, quality
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .fast:     return "Fast (640 px)"
+        case .balanced: return "Balanced (960 px)"
+        case .quality:  return "Quality (1280 px)"
+        }
+    }
+
+    /// Width of the frames sent to the server; matches the profile's inference width.
+    var sendWidth: Double {
+        switch self {
+        case .fast:     return 640
+        case .balanced: return 960
+        case .quality:  return 1280
+        }
+    }
+}
+
+/// What the virtual camera shows while no face can be transformed.
+enum FaceCameraFallback: String, Codable, CaseIterable, Identifiable {
+    case hold, original
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .hold:     return "Hold the last transformed frame"
+        case .original: return "Pass the original camera through"
+        }
+    }
+}
+
+/// Face Transform in the panel's Camera tab: NotchOrbit sends camera frames to a local
+/// deep-facial server (FastAPI + ONNX Runtime) and shows what comes back.
+struct FaceSettings: Codable, Equatable {
+    /// Show the face button and identity chip in the Camera tab.
+    var enabled = false
+    /// Folder of the deep-facial project (holds `.venv` and `server/`). Only needed to
+    /// start the server from NotchOrbit; a server that is already running is used as is.
+    var projectPath: String?
+    /// The server listens on 127.0.0.1 at this port.
+    var port = 8787
+    /// Launch the server from `projectPath` when a session needs it and none is running.
+    var autoStartServer = true
+    /// Enrolled identity to appear as, and its name for display before the server is up.
+    var identityID: String?
+    var identityName: String?
+    var profile: FaceProfile = .fast
+    var colorMatch = true
+    var stabilize = true
+    /// Keep the performer's own lips: sharper lip-sync, weaker likeness.
+    var preserveMouth = false
+    /// Run the swapper on every second frame and re-warp in between (about 2× the frame rate).
+    var swapEverySecondFrame = false
+    /// Also feed the output into the server's virtual camera (OBS Virtual Camera) for calls.
+    var virtualCamera = false
+    var cameraFallback: FaceCameraFallback = .hold
+    /// Keep the session running after the panel closes (only while the virtual camera is on).
+    var stayOn = false
+
+    /// The session may outlive the panel.
+    var runsInBackground: Bool { stayOn && virtualCamera }
+}
+
 /// Live system-stats mode: left circle = gauge, right circle = hot/cold emoji.
 struct StatsSettings: Codable, Equatable {
     var enabled = false
@@ -294,6 +364,8 @@ struct StatsSettings: Codable, Equatable {
     var photoDirectory: String?
     /// The panel's Mic tab: voice effect, playthrough and device choices.
     var mic = MicSettings()
+    /// Face Transform in the panel's Camera tab.
+    var face = FaceSettings()
 
     static var defaultPhotoDirectory: URL {
         FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
@@ -405,9 +477,6 @@ struct WeatherSettings: Codable, Equatable {
     var burstDuration: Double = 5
 
     static let refreshRange: ClosedRange<Double> = 5...60
-
-    /// True when there is somewhere to fetch weather for.
-    var hasLocation: Bool { locationMode == .current || place != nil }
 }
 
 struct AppSettings: Codable, Equatable {

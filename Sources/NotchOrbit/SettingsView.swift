@@ -6,7 +6,7 @@ import CoreLocation
 // MARK: - Pages
 
 enum SettingsPage: String, CaseIterable, Identifiable {
-    case general, notch, circles, island, stats, weather
+    case general, notch, circles, island, stats, weather, mic, face
 
     var id: String { rawValue }
 
@@ -18,17 +18,21 @@ enum SettingsPage: String, CaseIterable, Identifiable {
         case .island:  return "Dynamic Island"
         case .stats:   return "System Stats"
         case .weather: return "Weather"
+        case .mic:     return "Microphone"
+        case .face:    return "Camera & Face Swap"
         }
     }
 
     var subtitle: String {
         switch self {
-        case .general: return "Overlay, startup, privacy and maintenance."
+        case .general: return "Overlay, startup, captures, privacy and maintenance."
         case .notch:   return "Reshape the hardware notch with a coloured overlay."
         case .circles: return "The two discs that sit beside or inside the notch."
         case .island:  return "A virtual notch for displays that don't have one."
-        case .stats:   return "Live readings, thresholds, emoji and the expandable panel."
+        case .stats:   return "Live readings, thresholds and the emoji in the circles."
         case .weather: return "Current conditions and temperature in the right circle."
+        case .mic:     return "Voice effects, playthrough and the changed voice as a microphone for calls."
+        case .face:    return "The Camera tab's preview, and appearing as an enrolled, consenting face."
         }
     }
 
@@ -40,11 +44,13 @@ enum SettingsPage: String, CaseIterable, Identifiable {
         case .island:  return "capsule.fill"
         case .stats:   return "gauge.medium"
         case .weather: return "cloud.sun.fill"
+        case .mic:     return "mic.fill"
+        case .face:    return "video.fill"
         }
     }
 
     static let appearance: [SettingsPage] = [.notch, .circles, .island]
-    static let features: [SettingsPage] = [.stats, .weather]
+    static let features: [SettingsPage] = [.stats, .weather, .mic, .face]
 }
 
 // MARK: - Root
@@ -86,6 +92,8 @@ struct SettingsView: View {
                 case .island:  IslandPage()
                 case .stats:   StatsPage()
                 case .weather: WeatherPage()
+                case .mic:     MicPage()
+                case .face:    FacePage()
                 }
             }
         }
@@ -318,42 +326,6 @@ struct StatsPage: View {
             } footer: {
                 Text("Above the threshold the emoji flickers over rising embers; at or below it turns slowly while snow falls. Animation is paused automatically when Reduce Motion is on. Clicking the emoji fills the screen with the same effect for the chosen duration.")
             }
-            Section {
-                LabeledContent("Stats tab") {
-                    Text("All readings in a row; click one for its history graph").foregroundStyle(.secondary)
-                }
-                LabeledContent("Weather tab") {
-                    Text("Animated conditions, details and hourly forecast (when weather is on)").foregroundStyle(.secondary)
-                }
-                LabeledContent("Mic tab") {
-                    Text("Voice effects, playthrough and voice recording").foregroundStyle(.secondary)
-                }
-                LabeledContent("Camera tab") {
-                    Text("Live webcam preview, mic meter and photo shutter").foregroundStyle(.secondary)
-                }
-                LabeledContent("Screenshot & Record") {
-                    Text("Capture the screen without NotchOrbit's overlay").foregroundStyle(.secondary)
-                }
-                LabeledContent("Gear") {
-                    Text("Opens this window").foregroundStyle(.secondary)
-                }
-            } header: {
-                Text("Expanded panel")
-            }
-            Section {
-                Picker("Preview shape", selection: s.cameraShape) {
-                    ForEach(CameraShape.allCases) { Text($0.title).tag($0) }
-                }
-                LabeledContent("Preview") {
-                    CameraShapePreview(shape: stats.cameraShape)
-                }
-                PhotoFolderRow(directory: s.photoDirectory)
-            } header: {
-                Text("Camera tab")
-            } footer: {
-                Text("Shows a live webcam preview with a microphone level meter beside it and a shutter button for photos. Photos, screenshots, voice and screen recordings are all saved to the folder above (Downloads unless you change it); NotchOrbit's own overlay is left out of screenshots and recordings. Circle and square keep equal sides; the other shapes fill the panel width. Camera and microphone are only active while the tab is open; permissions are under General › Privacy.")
-            }
-            MicSection()
         }
         .formStyle(.grouped)
         .onAppear { monitor.sampleNow() }
@@ -366,6 +338,25 @@ struct StatsPage: View {
                 let metric = store.settings.stats.metric
                 store.settings.stats.setThreshold(value, for: metric)
             })
+    }
+}
+
+/// Everything about the panel's Mic tab on a page of its own, so the voice engine and
+/// the audio device lists are only touched when this page is opened.
+struct MicPage: View {
+    @EnvironmentObject var store: SettingsStore
+
+    var body: some View {
+        Form {
+            if !store.settings.stats.enabled {
+                Section {
+                    Text("The Mic tab is part of the expanded panel, which needs System Stats mode to be on.")
+                        .font(.caption).foregroundStyle(.orange)
+                }
+            }
+            MicSection()
+        }
+        .formStyle(.grouped)
     }
 }
 
@@ -1167,6 +1158,225 @@ struct IslandPreview: View {
     }
 }
 
+// MARK: - Face Transform
+
+/// Everything video: the Camera tab's preview, then Face Transform — the local
+/// deep-facial server, the face to appear as, quality and the virtual camera.
+struct FacePage: View {
+    @EnvironmentObject var store: SettingsStore
+    @ObservedObject private var face = FaceTransform.shared
+
+    var body: some View {
+        let f = $store.settings.stats.face
+        let s = store.settings.stats.face
+        Form {
+            Section {
+                if !store.settings.stats.enabled {
+                    Text("The Camera tab is part of the expanded panel, which needs System Stats mode to be on.")
+                        .font(.caption).foregroundStyle(.orange)
+                }
+                Picker("Preview shape", selection: $store.settings.stats.cameraShape) {
+                    ForEach(CameraShape.allCases) { Text($0.title).tag($0) }
+                }
+                LabeledContent("Preview") {
+                    CameraShapePreview(shape: store.settings.stats.cameraShape)
+                }
+            } header: {
+                Text("Camera tab")
+            } footer: {
+                Text("A live webcam preview with a microphone level meter beside it and a shutter button for photos (saved to the folder under General › Captures). Circle and square keep equal sides; the other shapes fill the available width. The camera is only on while the tab is open.")
+            }
+            Section {
+                Toggle("Face swap in the Camera tab", isOn: f.enabled)
+            } header: {
+                Text("Face swap")
+            } footer: {
+                Text("Puts an output feed beside the webcam preview in the Camera tab, with a row of controls below both: Transform, the face to appear as, and Enroll Face. Transform asks the person on camera to agree, then shows the transformed feed next to the camera input: the chosen identity's face on your head pose, expression and lip movement. Every transformed frame carries an AI TRANSFORMED badge that can't be switched off. Use it only with the permission of the identity's owner and of everyone on camera, never to pass as someone on an identity or liveness check, and tell the people you are talking to.")
+            }
+            Section {
+                FaceFolderRow(path: f.projectPath)
+                LabeledContent("Server") {
+                    HStack(spacing: 8) {
+                        Image(systemName: serverIcon.name).foregroundStyle(serverIcon.color)
+                        Text(serverText).foregroundStyle(.secondary).lineLimit(2)
+                        if face.ownsServer {
+                            Button("Stop") { face.stopServer() }.controlSize(.small)
+                        } else if face.serverState != .ready, face.serverState != .starting, face.serverState != .loadingModels {
+                            Button("Start") { face.startServer() }.controlSize(.small).disabled(s.projectPath == nil)
+                        }
+                        Button {
+                            face.refresh(launch: false)
+                        } label: {
+                            Image(systemName: "arrow.clockwise")
+                        }
+                        .controlSize(.small)
+                        .help("Check again")
+                    }
+                }
+                Toggle("Start the server when a session needs it", isOn: f.autoStartServer)
+                LabeledContent("Port") {
+                    TextField("", value: f.port, format: .number.grouping(.never))
+                        .frame(width: 70)
+                        .multilineTextAlignment(.trailing)
+                }
+            } header: {
+                Text("Face server")
+            } footer: {
+                Text("The work is done by the deep-facial project: a Python server that listens on this Mac only (127.0.0.1) and runs the face models through Core ML. A server that is already running on the port is used as it is. Otherwise NotchOrbit starts it from the folder above (run “make setup” and “make models” there once), writes its output to ~/Library/Logs/NotchOrbit/face-server.log, and stops it five minutes after the last session and on quit. It holds about 1 GB of models while it runs.")
+            }
+            Section {
+                Picker("Appear as", selection: identityBinding) {
+                    Text("Not chosen").tag("")
+                    ForEach(face.identities) { identity in
+                        Text("\(identity.name)  (\(identity.samples) sample\(identity.samples == 1 ? "" : "s"))").tag(identity.id)
+                    }
+                    if let chosen = s.identityID, !face.identities.contains(where: { $0.id == chosen }) {
+                        Text(s.identityName ?? "Chosen identity").tag(chosen)
+                    }
+                }
+                if let chosen = face.identities.first(where: { $0.id == s.identityID }),
+                   let data = chosen.thumbnail, let image = NSImage(data: data) {
+                    LabeledContent("Enrolled face") {
+                        Image(nsImage: image)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 56, height: 56)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                    }
+                }
+                LabeledContent("Identities") {
+                    HStack(spacing: 8) {
+                        Button("Enroll Face…") { FaceEnrollWindowController.show() }.controlSize(.small)
+                        Button("Manage in the Web App…") { face.openWebApp() }.controlSize(.small)
+                    }
+                }
+            } header: {
+                Text("Face")
+            } footer: {
+                Text(face.identities.isEmpty && face.serverState != .ready
+                     ? "The list is read from the server; start it to choose a face. Enrolling takes photos or clips plus two consent attestations (the face's owner and the performers), which the server records with it. Faces are stored encrypted by the server; delete them in its web app."
+                     : "Enrolling takes photos or clips plus two consent attestations (the face's owner and the performers), which the server records with it. Faces are stored encrypted by the server; delete them in its web app. The face can also be picked and enrolled from the Camera tab, and switched during a session.")
+            }
+            Section {
+                Picker("Profile", selection: f.profile) {
+                    ForEach(FaceProfile.allCases) { Text($0.title).tag($0) }
+                }
+                Toggle("Match skin colour to the camera", isOn: f.colorMatch)
+                Toggle("Stabilise the face between frames", isOn: f.stabilize)
+                Toggle("Keep my own mouth", isOn: f.preserveMouth)
+                Toggle("Swap every second frame", isOn: f.swapEverySecondFrame)
+            } header: {
+                Text("Swap quality")
+            } footer: {
+                Text("The profile sets the detector size and the width of the frames sent to the server. The swap itself costs about 75 ms a frame on an M1 Pro (around 11 fps); swapping every second frame re-warps the previous face in between for about twice the frame rate, with the expression one frame behind. Keeping your own mouth gives sharper lip-sync and a weaker likeness. Changes apply to a running session.")
+            }
+            Section {
+                Toggle("Send the transformed feed to the virtual camera", isOn: f.virtualCamera)
+                    .disabled(!cameraUsable && !s.virtualCamera)
+                LabeledContent("Virtual camera") {
+                    Text(cameraText).foregroundStyle(.secondary).lineLimit(3).multilineTextAlignment(.trailing)
+                }
+                Picker("When no face is found", selection: f.cameraFallback) {
+                    ForEach(FaceCameraFallback.allCases) { Text($0.title).tag($0) }
+                }
+                Toggle("Keep running after the panel closes", isOn: f.stayOn)
+                    .disabled(!s.virtualCamera)
+            } header: {
+                Text("Video calls")
+            } footer: {
+                Text("During a session the server feeds its output into OBS Virtual Camera (install OBS Studio 30+ and click Start Virtual Camera in it once so macOS enables the camera extension). Pick “OBS Virtual Camera” as the camera in FaceTime, Teams, Zoom or Meet. The AI TRANSFORMED badge is part of that feed; tell the other participants as well. With Keep running, the session and the camera stay on after the panel closes: stop it with the Stop button in the Camera tab, or with Stop Face Transform in the menu-bar menu. Sessions are started with Transform in the Camera tab, where the person on camera confirms each one.")
+            }
+        }
+        .formStyle(.grouped)
+        .onAppear { face.refresh(launch: false) }
+    }
+
+    private var identityBinding: Binding<String> {
+        Binding(
+            get: { store.settings.stats.face.identityID ?? "" },
+            set: { id in
+                store.settings.stats.face.identityName = face.identities.first { $0.id == id }?.name
+                store.settings.stats.face.identityID = id.isEmpty ? nil : id
+            })
+    }
+
+    private var serverText: String {
+        switch face.serverState {
+        case .unknown:       return "Checking…"
+        case .stopped:       return "Not running"
+        case .starting:      return "Starting…"
+        case .loadingModels: return "Loading the face models…"
+        case .ready:
+            let via = face.providers.map { " · \($0)" } ?? ""
+            return (face.ownsServer ? "Ready (started by NotchOrbit)" : "Ready") + via
+        case .failed(let message): return message
+        }
+    }
+
+    private var serverIcon: (name: String, color: Color) {
+        switch face.serverState {
+        case .ready:  return ("checkmark.circle.fill", .green)
+        case .failed: return ("xmark.circle.fill", .red)
+        case .starting, .loadingModels: return ("hourglass", .secondary)
+        default:      return ("moon.zzz.fill", .secondary)
+        }
+    }
+
+    private var cameraUsable: Bool {
+        face.virtualCamera.allowed && (face.virtualCamera.available || face.serverState != .ready)
+    }
+
+    private var cameraText: String {
+        let camera = face.virtualCamera
+        if face.serverState != .ready { return "Known once the server is running" }
+        if !camera.allowed { return "Switched off in the server's configuration" }
+        if !camera.available { return "Unavailable: \(camera.reason)" }
+        if camera.active { return "Live on “\(camera.device ?? "OBS Virtual Camera")”" }
+        if let error = camera.error { return "Retrying: \(error)" }
+        if camera.pending { return "Opening…" }
+        return "Available"
+    }
+
+}
+
+/// The deep-facial project folder (holds `.venv` and `server/`).
+struct FaceFolderRow: View {
+    @Binding var path: String?
+
+    var body: some View {
+        LabeledContent("deep-facial folder") {
+            HStack(spacing: 8) {
+                Image(systemName: "folder.fill").foregroundStyle(.secondary)
+                Text(displayPath)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .help(path ?? "")
+                Button("Choose…", action: choose)
+                    .controlSize(.small)
+            }
+        }
+    }
+
+    private var displayPath: String {
+        guard let path else { return "Not chosen" }
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        return path.hasPrefix(home) ? "~" + path.dropFirst(home.count) : path
+    }
+
+    private func choose() {
+        let panel = NSOpenPanel()
+        panel.message = "Choose the deep-facial project folder (the one with “server” and “.venv” in it)"
+        panel.prompt = "Choose"
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = false
+        if let path { panel.directoryURL = URL(fileURLWithPath: path, isDirectory: true) }
+        guard panel.runModal() == .OK, let chosen = panel.url else { return }
+        path = chosen.path
+    }
+}
+
 // MARK: - General
 
 struct GeneralPage: View {
@@ -1200,6 +1410,13 @@ struct GeneralPage: View {
                 Text("NotchOrbit lives in the menu bar and has no Dock icon.")
             }
             Section {
+                PhotoFolderRow(directory: $store.settings.stats.photoDirectory)
+            } header: {
+                Text("Captures")
+            } footer: {
+                Text("Photos from the Camera tab, screenshots, screen recordings and voice recordings are all saved here. NotchOrbit's own overlay is left out of screenshots and recordings.")
+            }
+            Section {
                 PermissionRow(title: "Camera", state: .init(cameraStatus), anchor: "Privacy_Camera")
                 PermissionRow(title: "Microphone", state: .init(micStatus), anchor: "Privacy_Microphone")
                 PermissionRow(title: "Screen Recording", state: screenAllowed ? .allowed : .notAsked("Not allowed"),
@@ -1208,7 +1425,7 @@ struct GeneralPage: View {
             } header: {
                 Text("Privacy")
             } footer: {
-                Text("The camera is used only by the Camera tab of the stats panel while it is open; the microphone by the Camera and Mic tabs (and, if you choose Keep running, by the Mic tab's playthrough after the panel closes). Screen Recording is needed for the screenshot and recording buttons; after allowing it, relaunch NotchOrbit. Location is used only by the Weather feature when it is set to your current location.")
+                Text("The camera is used only by the Camera tab of the stats panel while it is open (and by a Face Transform session you chose to keep running for the virtual camera); the microphone by the Camera and Mic tabs (and, if you choose Keep running, by the Mic tab's playthrough after the panel closes). Screen Recording is needed for the screenshot and recording buttons; after allowing it, relaunch NotchOrbit. Location is used only by the Weather feature when it is set to your current location.")
             }
             Section {
                 LabeledContent("Reset") {

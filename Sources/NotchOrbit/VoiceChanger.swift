@@ -753,7 +753,7 @@ final class VoiceChanger: ObservableObject {
                 if ok {
                     self.state = .running
                 } else {
-                    self.fail("Echo cancellation couldn't start on \(realMic.name). Turn it off in Settings › System Stats › Mic tab to use the plain capture.")
+                    self.fail("Echo cancellation couldn't start on \(realMic.name). Turn it off in Settings › Microphone to use the plain capture.")
                 }
             }
         } else {
@@ -1092,7 +1092,7 @@ enum VirtualMicrophone {
         var errorDescription: String? {
             switch self {
             case .noLoopbackDevice:
-                return "Needs a virtual audio device. Install BlackHole from Settings › System Stats › Mic tab."
+                return "Needs a virtual audio device. Install BlackHole from Settings › Microphone."
             case .noMicrophone:
                 return "No real microphone to listen to."
             case .couldNotPublish:

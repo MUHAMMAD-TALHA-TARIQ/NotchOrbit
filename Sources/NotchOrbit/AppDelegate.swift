@@ -9,6 +9,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var showOverlayItem: NSMenuItem!
     private var stopRecordingItem: NSMenuItem!
     private var virtualMicItem: NSMenuItem!
+    private var stopFaceItem: NSMenuItem!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         applyFirstLaunchDefaultsIfNeeded()
@@ -36,11 +37,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             let image = NSImage(systemSymbolName: "circle.lefthalf.filled", accessibilityDescription: "NotchOrbit")
             image?.isTemplate = true
             button.image = image
-            button.toolTip = "NotchOrbit"
+            button.toolTip = "NotchOrbit \(AppInfo.version)"
         }
 
         let menu = NSMenu()
         menu.delegate = self
+        let versionItem = NSMenuItem(title: "NotchOrbit \(AppInfo.version)", action: nil, keyEquivalent: "")
+        versionItem.isEnabled = false
+        menu.addItem(versionItem)
+        menu.addItem(.separator())
         showOverlayItem = NSMenuItem(title: "Show Overlay", action: #selector(toggleOverlay), keyEquivalent: "")
         showOverlayItem.target = self
         menu.addItem(showOverlayItem)
@@ -51,6 +56,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         virtualMicItem = NSMenuItem(title: "Use Voice Effect as Microphone", action: #selector(toggleVirtualMic), keyEquivalent: "")
         virtualMicItem.target = self
         menu.addItem(virtualMicItem)
+        stopFaceItem = NSMenuItem(title: "Stop Face Transform", action: #selector(stopFaceTransform), keyEquivalent: "")
+        stopFaceItem.target = self
+        menu.addItem(stopFaceItem)
         menu.addItem(.separator())
         menu.addItem(withTitle: "Quit NotchOrbit", action: #selector(quit), keyEquivalent: "q").target = self
         statusItem.menu = menu
@@ -65,6 +73,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         stopRecordingItem.isHidden = !ScreenCaptureService.shared.isRecording
         let mic = SettingsStore.shared.settings.stats.mic
         virtualMicItem.state = mic.useAsMicrophone ? .on : .off
+        let face = FaceTransform.current
+        stopFaceItem.isHidden = face?.sessionState.isActive != true
+        stopFaceItem.title = face?.activeIdentityName.map { "Stop Face Transform (\($0))" } ?? "Stop Face Transform"
         virtualMicItem.title = mic.useAsMicrophone ? "Use Voice Effect as Microphone (\(mic.effect.title))" : "Use Voice Effect as Microphone"
     }
 
@@ -72,6 +83,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         ScreenCaptureService.shared.finishForTermination()
         VoiceChanger.current?.stop()   // finishes any voice recording
         VirtualMicrophone.restoreForQuit()
+        FaceTransform.current?.shutdown()   // ends the session and a server NotchOrbit launched
         SettingsStore.shared.flush()
     }
 
@@ -85,6 +97,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         ScreenCaptureService.shared.stopRecording { result in
             if case .success(let url) = result { NSWorkspace.shared.activateFileViewerSelecting([url]) }
         }
+    }
+
+    @objc private func stopFaceTransform() {
+        FaceTransform.current?.stop()
     }
 
     @objc private func toggleVirtualMic() {

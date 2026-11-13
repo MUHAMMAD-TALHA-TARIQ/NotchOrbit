@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.0.0 — 2026-11-13
+
+- Face Transform (Settings › Face Transform, off by default): the Camera tab can show
+  you as an enrolled identity, using the local deep-facial server. Input and output
+  feeds side by side with a control row (Transform, face picker, Enroll Face, more),
+  per-session consent card, native enrolment window with the consent attestations, live
+  option changes, snapshot of the transformed frame,
+  optional output to the server's virtual camera with "Keep running", a Stop item in the
+  menu-bar menu, and server start / stop from NotchOrbit. The server's AI TRANSFORMED
+  badge is on every transformed frame.
+
+- The version is shown at the top of the menu-bar menu (and in the status item's
+  tooltip), as well as in Settings.
+- `build.sh` uses an installed Xcode when the Command Line Tools are selected (SwiftUI's
+  macros need Xcode's compiler plugin).
+- Open-source release: MIT licence, restructured README, documentation under `docs/`,
+  contributing and security notes, and a GitHub Actions build.
+- Settings: one page per feature. The Mic tab's options moved from System Stats to a
+  new Microphone page, the Camera tab's options joined Face Transform on Camera & Face
+  Swap, and the capture folder moved to General. The descriptive "Expanded panel" rows
+  and the duplicate session row were removed. The voice engine and audio device lists
+  are no longer loaded just by opening the System Stats page.
+- Face Transform memory: the camera session and video output only exist during a
+  session, frames are encoded with VideoToolbox + ImageIO instead of Core Image, the
+  output feed is decoded at display size, and frames no longer queue up for the main
+  thread (one slot, newest wins). A live session costs about 7 MB in the engine, down
+  from about 15 MB, and creating the engine costs nothing measurable.
+
 ## 1.3.0 — 2026-11-09
 
 Performance and footprint release. No new features; behaviour is unchanged unless

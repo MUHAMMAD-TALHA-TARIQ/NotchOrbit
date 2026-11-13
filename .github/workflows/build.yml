@@ -1,0 +1,22 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Swift version
+        run: swift --version
+      - name: Debug build
+        run: swift build -c debug
+      - name: Release app bundle
+        run: ./build.sh release
+      - name: Check the bundle
+        run: |
+          codesign --verify --deep --strict build/NotchOrbit.app
+          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" build/NotchOrbit.app/Contents/Info.plist
