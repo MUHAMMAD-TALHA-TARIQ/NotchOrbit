@@ -678,11 +678,17 @@ struct FaceEnrollView: View {
     }
 
     @State private var name = ""
-    @State private var attestedBy = NSFullUserName()
+    @State private var attestedBy: String
     @State private var ownerConsent = false
     @State private var performerConsent = false
     @State private var files: [URL] = []
     @State private var phase: Phase = .editing
+
+    /// `attestedBy` starts as the account's full name; the person can change it.
+    init(attestedBy: String = NSFullUserName(), close: @escaping () -> Void) {
+        self.close = close
+        _attestedBy = State(initialValue: attestedBy)
+    }
 
     private static let fileTypes = ["jpg", "jpeg", "png", "webp", "bmp", "mp4", "mov", "m4v", "webm", "mkv", "avi"]
 

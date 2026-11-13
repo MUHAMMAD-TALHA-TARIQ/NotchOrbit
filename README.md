@@ -180,6 +180,14 @@ Every face the notch can wear, as the app draws it on a 14" MacBook Pro.
 |---|---|
 | ![Mic tab](Assets/screenshots/panel-mic.png) | ![Camera tab](Assets/screenshots/panel-camera.png) |
 
+**Face Transform** · the Camera tab with input and output feeds and the control row, the Settings page, and the Enroll Face window
+
+![Camera tab with Face Transform](Assets/screenshots/panel-camera-face.png)
+
+| Settings › Camera & Face Swap | Enroll Face |
+|---|---|
+| ![Camera & Face Swap settings](Assets/screenshots/settings-face.png) | ![Enroll Face window](Assets/screenshots/enroll-face.png) |
+
 The images are rendered by the app's own view code (`Tools/render-screenshots.swift`) on a mock
 desktop, so they stay in step with the source; the particle animations and the live camera
 feed are stand-ins.

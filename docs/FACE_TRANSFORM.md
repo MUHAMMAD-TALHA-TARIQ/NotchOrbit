@@ -60,6 +60,8 @@ System Stats mode must be on, because the Camera tab lives in the expanded panel
 
 ## Using it
 
+![Camera tab with Face Transform](../Assets/screenshots/panel-camera-face.png)
+
 Open the panel and choose the Camera tab. With the feature on it shows two feeds,
 **INPUT** (your camera) and **OUTPUT** (the transformed feed), and a row of controls
 below them.
@@ -77,6 +79,8 @@ When no face is found, or it is too small or uncertain, the output is the untouc
 camera frame with no badge, and the status says "no face".
 
 ### Enrolling a face
+
+<img src="../Assets/screenshots/enroll-face.png" alt="Enroll Face window" width="460">
 
 Enroll Face asks for a name, photos or short clips of one person, who is attesting, and
 two statements: that the person in the photos gave permission, and that everyone who

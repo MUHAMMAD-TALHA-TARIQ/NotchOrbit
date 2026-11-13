@@ -8,6 +8,7 @@
 //   ./shots "$OLDPWD/Assets/screenshots"
 import AppKit
 import ImageIO
+import SwiftUI
 import UniformTypeIdentifiers
 
 // Offscreen renders of NotchOrbit's overlay "faces" for the README. The views are the
@@ -95,12 +96,59 @@ func render(_ view: NSView, in ctx: CGContext, parentFlipped: Bool) {
         PanelDrawing.drawSymbol("person.crop.circle", in: b.insetBy(dx: 0, dy: b.height * 0.1), pointSize: b.height * 0.42, weight: .regular,
                                 color: NSColor.white.withAlphaComponent(0.55))
         let side = ShutterButton.size
-        let shutter = CGRect(x: b.midX - side / 2, y: b.maxY - 10 - side, width: side, height: side)
+        let shutter = CGRect(x: b.midX - side / 2, y: 10, width: side, height: side)   // the view is y-up
         ctx.setFillColor(CGColor(gray: 1, alpha: 0.22)); ctx.fillEllipse(in: shutter)
         ctx.setStrokeColor(CGColor(gray: 1, alpha: 0.7)); ctx.setLineWidth(2); ctx.strokeEllipse(in: shutter.insetBy(dx: 1, dy: 1))
         PanelDrawing.drawSymbol("camera.fill", in: shutter, pointSize: 15, color: .white)
         ctx.setStrokeColor(CGColor(gray: 1, alpha: 0.12)); ctx.setLineWidth(1)
         ctx.addPath(CGPath(roundedRect: b.insetBy(dx: 0.5, dy: 0.5), cornerWidth: r, cornerHeight: r, transform: nil)); ctx.strokePath()
+        if let caption = cam.caption { feedCaption(caption, in: b) }
+        recurse = false
+    case let out as FaceOutputView:
+        // Stand-in for a live transformed feed: a different "person", the badge the
+        // server burns into every transformed frame, and the caption.
+        let b = out.bounds, r = out.layer?.cornerRadius ?? 12
+        ctx.addPath(CGPath(roundedRect: b, cornerWidth: r, cornerHeight: r, transform: nil)); ctx.clip()
+        let g = CGGradient(colorsSpace: CGColorSpace(name: CGColorSpace.sRGB)!,
+                           colors: [CGColor(srgbRed: 0.62, green: 0.48, blue: 0.66, alpha: 1), CGColor(srgbRed: 0.28, green: 0.20, blue: 0.40, alpha: 1)] as CFArray,
+                           locations: [0, 1])!
+        ctx.drawLinearGradient(g, start: CGPoint(x: 0, y: 0), end: CGPoint(x: b.width, y: b.height), options: [])
+        PanelDrawing.drawSymbol("person.crop.circle.fill", in: b.insetBy(dx: 0, dy: b.height * 0.1), pointSize: b.height * 0.42, weight: .regular,
+                                color: NSColor.white.withAlphaComponent(0.7))
+        let badge = PanelDrawing.text("AI TRANSFORMED", size: 8.5, weight: .bold, color: .white)
+        let badgeRect = CGRect(x: 8, y: 8, width: badge.size().width + 10, height: badge.size().height + 5)
+        ctx.setFillColor(CGColor(srgbRed: 0.1, green: 0.1, blue: 0.75, alpha: 0.9)); ctx.fill(badgeRect)
+        badge.draw(at: CGPoint(x: badgeRect.minX + 5, y: badgeRect.minY + 2.5))
+        ctx.setStrokeColor(CGColor(gray: 1, alpha: 0.12)); ctx.setLineWidth(1)
+        ctx.addPath(CGPath(roundedRect: b.insetBy(dx: 0.5, dy: 0.5), cornerWidth: r, cornerHeight: r, transform: nil)); ctx.strokePath()
+        feedCaption("OUTPUT", in: b)
+        recurse = false
+    case let bar as FaceControlBar:
+        // The control row as it looks during a session (the real one needs a live server).
+        let h = min(bar.bounds.height, PanelPillButton.height), y = (bar.bounds.height - h) / 2
+        var x: CGFloat = 0
+        let pills: [(String, String, NSColor)] = [
+            ("stop.fill", "Stop", NSColor(srgbRed: 0.85, green: 0.18, blue: 0.18, alpha: 1)),
+            ("person.crop.circle", "Alex ▾", NSColor.white.withAlphaComponent(0.12)),
+            ("person.crop.circle.badge.plus", "Enroll Face", NSColor.white.withAlphaComponent(0.12)),
+            ("ellipsis", "", NSColor.white.withAlphaComponent(0.12)),
+        ]
+        for (symbol, title, fill) in pills {
+            let label = PanelDrawing.text(title, size: 11, weight: .semibold, color: .white)
+            let icon: CGFloat = 16
+            let w = title.isEmpty ? 34 : label.size().width + icon + 24
+            let rect = CGRect(x: x, y: y, width: w, height: h)
+            fill.setFill(); NSBezierPath(roundedRect: rect, xRadius: 9, yRadius: 9).fill()
+            if title.isEmpty {
+                PanelDrawing.drawSymbol(symbol, in: rect, pointSize: 11, color: .white)
+            } else {
+                PanelDrawing.drawSymbol(symbol, in: CGRect(x: rect.minX + 10, y: rect.minY, width: icon, height: h), pointSize: 11, color: .white)
+                label.draw(at: CGPoint(x: rect.minX + 10 + icon + 4, y: rect.midY - label.size().height / 2))
+            }
+            x += w + 6
+        }
+        let status = PanelDrawing.text("11 fps · transforming", size: 10, weight: .medium, color: NSColor.white.withAlphaComponent(0.6))
+        status.draw(at: CGPoint(x: bar.bounds.maxX - status.size().width, y: bar.bounds.midY - status.size().height / 2))
         recurse = false
     case let meter as MicLevelView:
         let b = meter.bounds
@@ -152,6 +200,38 @@ func render(_ view: NSView, in ctx: CGContext, parentFlipped: Bool) {
     if recurse { for sub in view.subviews { render(sub, in: ctx, parentFlipped: view.isFlipped) } }
     NSGraphicsContext.restoreGraphicsState()
     ctx.restoreGState()
+}
+
+/// The "INPUT" / "OUTPUT" pill at the top of a feed (drawn in the feed's own y-up space).
+func feedCaption(_ text: String, in b: CGRect) {
+    let label = PanelDrawing.text(text, size: 8.5, weight: .bold, color: NSColor.white.withAlphaComponent(0.9))
+    let size = CGSize(width: label.size().width + 12, height: 14)
+    let rect = CGRect(x: b.midX - size.width / 2, y: b.maxY - size.height - 8, width: size.width, height: size.height)
+    NSColor.black.withAlphaComponent(0.55).setFill()
+    NSBezierPath(roundedRect: rect, xRadius: 7, yRadius: 7).fill()
+    label.draw(at: CGPoint(x: rect.minX + 6, y: rect.midY - label.size().height / 2))
+}
+
+/// A SwiftUI window's content, rendered offscreen at `size` (dark appearance).
+func windowShot<V: View>(_ name: String, _ view: V, size: CGSize) {
+    let hosting = NSHostingView(rootView: view.environmentObject(SettingsStore.shared).preferredColorScheme(.dark))
+    hosting.frame = CGRect(origin: .zero, size: size)
+    // The window's own background isn't part of an offscreen capture, so paint one.
+    let backdrop = NSView(frame: hosting.frame)
+    backdrop.wantsLayer = true
+    backdrop.layer?.backgroundColor = NSColor(white: 0.13, alpha: 1).cgColor
+    backdrop.addSubview(hosting)
+    let window = NSWindow(contentRect: hosting.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+    window.appearance = NSAppearance(named: .darkAqua)
+    window.contentView = backdrop
+    backdrop.layoutSubtreeIfNeeded()
+    RunLoop.main.run(until: Date().addingTimeInterval(1.5))   // let SwiftUI settle (and the server row resolve)
+    guard let rep = backdrop.bitmapImageRepForCachingDisplay(in: backdrop.bounds) else { return }
+    backdrop.cacheDisplay(in: backdrop.bounds, to: rep)
+    let url = outDir.appendingPathComponent(name + ".png")
+    try? rep.representation(using: .png, properties: [:])?.write(to: url)
+    let bytes = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int) ?? 0
+    print("wrote \(name).png \(bytes / 1024) KB")
 }
 
 /// Mock desktop: wallpaper, menu bar with a few items; `notchHeight` 0 means no hardware notch.
@@ -304,4 +384,19 @@ notchScene("panel-stats", panel, height: 300, tab: "stats", cpu: 58)
 notchScene("panel-weather", panel, height: 360, tab: "weather")
 notchScene("panel-mic", panel, height: 372, tab: "mic")
 notchScene("panel-camera", panel, height: 372, tab: "camera")
+
+// Face Transform: the Camera tab with both feeds, the Settings page and the enrolment
+// window. No real face or name is shown: the feeds are stand-ins, and the Settings page
+// only reports whether a face server happens to be running on this Mac.
+var faced = panel
+faced.stats.face.enabled = true
+faced.stats.face.port = 9
+faced.stats.face.projectPath = "/Users/you/deep-facial"
+faced.stats.face.identityID = "0000000000000000"
+faced.stats.face.identityName = "Alex"
+SettingsStore.shared.settings = faced
+notchScene("panel-camera-face", faced, height: 408, tab: "camera")
+SettingsStore.shared.settings.stats.face.port = 8787
+windowShot("settings-face", SettingsPageContainer(page: .face) { FacePage() }, size: CGSize(width: 640, height: 880))
+windowShot("enroll-face", FaceEnrollView(attestedBy: "Your Name") {}, size: CGSize(width: 460, height: 400))
 print("done")

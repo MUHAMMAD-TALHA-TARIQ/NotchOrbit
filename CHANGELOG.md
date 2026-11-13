@@ -2,7 +2,7 @@
 
 ## 2.0.0 — 2026-11-13
 
-- Face Transform (Settings › Face Transform, off by default): the Camera tab can show
+- Face Transform (Settings › Camera & Face Swap, off by default): the Camera tab can show
   you as an enrolled identity, using the local deep-facial server. Input and output
   feeds side by side with a control row (Transform, face picker, Enroll Face, more),
   per-session consent card, native enrolment window with the consent attestations, live
@@ -15,6 +15,8 @@
   tooltip), as well as in Settings.
 - `build.sh` uses an installed Xcode when the Command Line Tools are selected (SwiftUI's
   macros need Xcode's compiler plugin).
+- Screenshots of Face Transform (Camera tab, Settings page, Enroll Face window) rendered
+  by `Tools/render-screenshots.swift` with stand-in feeds.
 - Open-source release: MIT licence, restructured README, documentation under `docs/`,
   contributing and security notes, and a GitHub Actions build.
 - Settings: one page per feature. The Mic tab's options moved from System Stats to a

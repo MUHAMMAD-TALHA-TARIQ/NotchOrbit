@@ -62,7 +62,7 @@ Settings…, one sidebar page per feature.
   hourly strip with a temperature curve.
 - **Face Transform** (off by default; Settings › Camera & Face Swap) – the Camera tab can show
   you as an enrolled, consenting identity. NotchOrbit is a client of the separate
-  [deep-facial](../../deep-facial) project: a Python server on this Mac (127.0.0.1 only)
+  deep-facial project (see [FACE_TRANSFORM.md](FACE_TRANSFORM.md)): a Python server on this Mac (127.0.0.1 only)
   that detects, swaps and composites the face and burns an **AI TRANSFORMED** badge into
   every transformed frame. Point Settings at the project folder and NotchOrbit starts the
   server when a session needs it (a server already running on the port is used as is) and
