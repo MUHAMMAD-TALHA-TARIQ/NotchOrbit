@@ -90,6 +90,10 @@ cd NotchOrbit
 ./run.sh
 ```
 
+`main` always holds the latest code and is what a plain `git clone` gives you. Released
+versions are tags: run `git checkout v2.0.0` after cloning to build exactly what was
+released, or download the ready-made app from the [Releases](../../releases) page.
+
 `run.sh` builds a release, assembles `build/NotchOrbit.app` and launches it. Other entry points:
 
 ```bash

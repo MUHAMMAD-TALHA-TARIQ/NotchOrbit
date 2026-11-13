@@ -23,8 +23,11 @@ file name comes from the same value, so there is one place to change.
 4. Keep `build/NotchOrbit.dSYM` with the release for symbolicating crash reports.
 
 Also update `CHANGELOG.md` and the version line near the top of `README.md`, then tag
-the commit (`git tag v2.0.0 && git push --tags`) and attach the DMG and its `.sha256`
-file to a GitHub release.
+the commit (`git tag -a v2.0.0 -m "NotchOrbit 2.0.0" && git push origin v2.0.0`) and
+attach the DMG and its `.sha256` file to a GitHub release for that tag.
+
+Releases are tags on `main`, not branches: `main` is the only long-lived branch, so
+there is never a question of which one to clone.
 
 ## Signing and notarizing
 
