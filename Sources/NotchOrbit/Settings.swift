@@ -479,6 +479,45 @@ struct WeatherSettings: Codable, Equatable {
     static let refreshRange: ClosedRange<Double> = 5...60
 }
 
+/// What the music-reactive ripples look like.
+enum RippleMusicEffect: String, Codable, CaseIterable, Identifiable {
+    case glass, bubbles, rain, aurora, shuffle
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .glass:   return "Liquid Glass Rings"
+        case .bubbles: return "Soap Bubbles"
+        case .rain:    return "Rain on Water"
+        case .aurora:  return "Aurora Glow"
+        case .shuffle: return "Shuffle"
+        }
+    }
+
+    var summary: String {
+        switch self {
+        case .glass:   return "A wide ring of glass rolls down the screen on each bass hit; a thinner one answers from the bottom on snares and hi-hats."
+        case .bubbles: return "A large bubble opens on each bass hit and small ones on snares. They drift upward, swell with the bass and pop."
+        case .rain:    return "Each beat is a drop landing somewhere on the screen, its rings spreading across the surface."
+        case .aurora:  return "Colour wells up from the bottom edge on the bass and flickers in from the sides on snares. Light only; nothing is bent."
+        case .shuffle: return "Moves between the four effects every 24 bass beats."
+        }
+    }
+}
+
+/// Screen Ripple: the shockwave, what sets it off, and the music effects. Off by
+/// default; nothing is captured or listened to until it is switched on.
+struct RippleSettings: Codable, Equatable {
+    var enabled = false
+    /// ⌃⌥T from the top of the screen, ⌃⌥R at the pointer.
+    var hotkeys = true
+    var onAirDrop = true
+    var onLock = true
+    var withMusic = true
+    var musicEffect: RippleMusicEffect = .glass
+}
+
 struct AppSettings: Codable, Equatable {
     var overlayVisible = true
     var circles = CircleSettings()
@@ -488,6 +527,7 @@ struct AppSettings: Codable, Equatable {
     var island = IslandSettings()
     var stats = StatsSettings()
     var weather = WeatherSettings()
+    var ripple = RippleSettings()
     var launchAtLogin = false
 
     /// Shape to draw, or nil when the hardware notch is left untouched.

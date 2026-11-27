@@ -57,7 +57,9 @@ Permissions
   The Camera tab asks for camera and microphone access when first opened.
   The screenshot and screen-recording buttons need Screen Recording access;
   allow it in System Settings > Privacy & Security > Screen Recording and
-  relaunch NotchOrbit.
+  relaunch NotchOrbit. Screen Ripple (off by default, Settings > Screen
+  Ripple) uses the same permission to bend the screen and to follow the beat
+  of what the Mac is playing.
   Weather mode with "Current location" asks for Location access; you can
   instead pick a city in Settings > Weather and skip the prompt.
 

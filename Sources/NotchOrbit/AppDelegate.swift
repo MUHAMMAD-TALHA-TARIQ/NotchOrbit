@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var stopRecordingItem: NSMenuItem!
     private var virtualMicItem: NSMenuItem!
     private var stopFaceItem: NSMenuItem!
+    private var rippleItems: [NSMenuItem] = []
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         applyFirstLaunchDefaultsIfNeeded()
@@ -22,6 +23,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             openSettings()
         }
         VirtualMicrophone.resumeAtLaunch()
+        ScreenRipple.shared.start()
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
@@ -59,6 +61,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         stopFaceItem = NSMenuItem(title: "Stop Face Transform", action: #selector(stopFaceTransform), keyEquivalent: "")
         stopFaceItem.target = self
         menu.addItem(stopFaceItem)
+        let rippleTop = NSMenuItem(title: "Ripple from Top", action: #selector(rippleFromTop), keyEquivalent: "t")
+        let rippleCursor = NSMenuItem(title: "Ripple at Pointer", action: #selector(rippleAtCursor), keyEquivalent: "r")
+        rippleItems = [.separator(), rippleTop, rippleCursor]
+        for item in [rippleTop, rippleCursor] {
+            item.keyEquivalentModifierMask = [.control, .option]
+            item.target = self
+        }
+        rippleItems.forEach(menu.addItem)
         menu.addItem(.separator())
         menu.addItem(withTitle: "Quit NotchOrbit", action: #selector(quit), keyEquivalent: "q").target = self
         statusItem.menu = menu
@@ -71,6 +81,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func menuNeedsUpdate(_ menu: NSMenu) {
         showOverlayItem.state = SettingsStore.shared.settings.overlayVisible ? .on : .off
         stopRecordingItem.isHidden = !ScreenCaptureService.shared.isRecording
+        let rippleOn = SettingsStore.shared.settings.ripple.enabled || Debug.ripple
+        rippleItems.forEach { $0.isHidden = !rippleOn }
         let mic = SettingsStore.shared.settings.stats.mic
         virtualMicItem.state = mic.useAsMicrophone ? .on : .off
         let face = FaceTransform.current
@@ -84,6 +96,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         VoiceChanger.current?.stop()   // finishes any voice recording
         VirtualMicrophone.restoreForQuit()
         FaceTransform.current?.shutdown()   // ends the session and a server NotchOrbit launched
+        ScreenRipple.shared.shutdown()
         SettingsStore.shared.flush()
     }
 
@@ -97,6 +110,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         ScreenCaptureService.shared.stopRecording { result in
             if case .success(let url) = result { NSWorkspace.shared.activateFileViewerSelecting([url]) }
         }
+    }
+
+    /// Waits for the menu to fade out so it is not frozen into the screenshot the wave bends.
+    @objc private func rippleFromTop() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { ScreenRipple.shared.ripple(from: .top) }
+    }
+
+    @objc private func rippleAtCursor() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { ScreenRipple.shared.ripple(from: .cursor) }
     }
 
     @objc private func stopFaceTransform() {

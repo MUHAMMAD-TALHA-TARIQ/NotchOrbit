@@ -9,9 +9,10 @@ A tiny macOS menu-bar app that dresses up the MacBook notch. It puts circles on 
 side of the notch (plain, live system-stat gauges, or the weather), reshapes the notch
 with a black overlay, gives notch-less displays a Dynamic Island, and expands into a
 panel with system graphs, a weather scene, a voice changer and a webcam tab with an
-optional, consent-gated face swap.
+optional, consent-gated face swap. It can also send a ripple across the whole screen
+that bends what is on it, on a shortcut, an AirDrop, a lock or the beat of your music.
 
-Version 2.0.1 · macOS 13 or later · Apple silicon and Intel · no third-party dependencies
+Version 3.0.0 · macOS 13 or later · Apple silicon and Intel · no third-party dependencies
 
 ![sample](Assets/sample.gif)
 
@@ -41,7 +42,8 @@ Version 2.0.1 · macOS 13 or later · Apple silicon and Intel · no third-party 
 | **Camera tab** | Live webcam preview in five outlines, photo shutter, microphone level meter. |
 | **Face Transform** | Optional. Shows you as an enrolled, consenting face using a local server; input and output feeds side by side, enrolment, and a virtual camera for calls. Every transformed frame is labelled AI TRANSFORMED. |
 | **Capture** | Screenshot and screen-recording buttons that leave NotchOrbit's own overlay out. |
-| **Lightweight** | About 17 MB of memory when idle, a 3.2 MB universal app, menu-bar only, optional launch at login. |
+| **Screen Ripple** | Optional. A shockwave that bends the screen, set off by a shortcut, an AirDrop arriving or the Mac locking and unlocking (it draws over the lock screen too), and four effects that follow the beat of whatever is playing: liquid glass rings, soap bubbles, rain on water and an aurora glow. |
+| **Lightweight** | A 3.7 MB universal app, menu-bar only, optional launch at login. Features that cost memory or CPU only do so while they are on. |
 
 The full description of every feature is in [docs/FEATURES.md](docs/FEATURES.md).
 
@@ -121,7 +123,8 @@ macOS asks for each permission the first time the feature that needs it is used:
 |---|---|---|
 | Camera | Camera tab, Face Transform | Only on while the tab is open, or while a face session is pinned to the virtual camera |
 | Microphone | Camera tab meter, Mic tab | "Use as Mic" keeps listening in the background until switched off |
-| Screen Recording | Screenshot and record buttons | Needs a relaunch after allowing |
+| Screen Recording | Screenshot and record buttons; Screen Ripple | Needs a relaunch after allowing. Screen Ripple uses it to bend the screen and to hear the Mac's sound output for the music effects, only while it is switched on |
+| Downloads folder | Screen Ripple's AirDrop trigger | Asked once, when that trigger is first on |
 | Location | Weather with "Current location" | Choosing a city needs no permission |
 
 The current state of each is shown under Settings › General › Privacy. The app's version

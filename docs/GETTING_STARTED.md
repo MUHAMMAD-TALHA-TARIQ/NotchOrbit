@@ -49,7 +49,8 @@ menu-bar menu.
    gauge. Click the gauge to expand the panel; click it again, or anywhere else, to close.
 3. The panel's tab row holds Stats, Weather (when weather is on), Mic and Camera, then
    the screenshot, record and gear buttons.
-4. **Weather**, **Microphone** and **Camera & Face Swap** each have their own Settings page.
+4. **Weather**, **Microphone**, **Camera & Face Swap** and **Screen Ripple** each have their
+   own Settings page. Screen Ripple is off until you switch it on there.
 5. **General** holds the overlay switch, launch at login, the capture folder,
    permissions, reset and the version.
 
@@ -63,7 +64,8 @@ a shortcut button for each.
 |---|---|
 | Camera | Camera tab preview and photos; Face Transform |
 | Microphone | Level meter in the Camera tab; voice changer |
-| Screen Recording | Screenshot and record buttons (relaunch NotchOrbit after allowing) |
+| Screen Recording | Screenshot and record buttons; Screen Ripple, to bend the screen and hear the beat (relaunch NotchOrbit after allowing) |
+| Downloads folder | Screen Ripple's AirDrop trigger |
 | Location | Weather for your current location (not needed if you pick a city) |
 | Automation (Finder) | Only `make-dmg.sh`, to lay out the DMG window |
 

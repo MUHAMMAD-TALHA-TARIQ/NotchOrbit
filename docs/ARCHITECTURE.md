@@ -57,6 +57,15 @@ Sources/NotchOrbit/
   WeatherService.swift         Open-Meteo fetch + Core Location / city search, WMO code → condition
   WeatherBadgeView.swift       weather mode badge (right): temperature + condition capsule
   WeatherPanelView.swift       panel Weather tab: animated scene, details, hourly curve
+  ScreenRipple.swift           Screen Ripple controller: triggers, one overlay window per display, beat → effect pieces
+  RippleRenderer.swift         Metal renderer and shader: the shockwave plus up to 24 effect pieces (rings, bubbles, glows)
+  ScreenStill.swift            one still of a display for the shockwave to bend (ScreenCaptureKit, macOS 14+)
+  LiveScreen.swift             live picture of a display as a Metal texture, for the music effects
+  MusicListener.swift          system audio via ScreenCaptureKit and beat detection by spectral flux
+  LockScreen.swift             lock state, and the private SkyLight calls that put a window above the lock screen
+  AirDropWatcher.swift         spots files that arrive in Downloads over AirDrop
+  AirDropPreviewPanel.swift    Quick Look card for what arrived
+  HotKey.swift                 system-wide shortcuts through Carbon (no Accessibility permission)
   SettingsView.swift           SwiftUI settings: sidebar pages, previews, emoji field, privacy & reset
   SettingsWindowController.swift
 ```
@@ -78,6 +87,12 @@ NotchOrbit is built to stay out of the way when idle:
   for the whole session. That unit brings its own noise-suppression model and accounts
   for most of the memory in that mode; turn echo cancellation off if memory matters
   more than call quality.
+
+Screen Ripple creates nothing while it is off: no Metal device, capture stream, hotkey or
+folder watcher. With it on, the overlay windows and renderer exist from the first ripple
+and draw only while something is playing; with *Ripple with music* on, a small audio
+stream runs all the time and the per-display picture streams run only while there are
+beats.
 
 Face Transform adds nothing while it is off. With the feature on and idle, the engine
 holds no camera or GPU resources; during a session it costs about 7 MB in NotchOrbit.
@@ -130,6 +145,28 @@ The face server is a separate process and holds about 1 GB of models while it ru
   engine's session as the input feed (unmirrored, to line up with the output). A server NotchOrbit
   launched logs to `~/Library/Logs/NotchOrbit/face-server.log`. `Info.plist` allows
   cleartext to local addresses only (`NSAllowsLocalNetworking`).
+- Screen Ripple draws in one transparent, click-through window per display at screen-saver
+  level, with a Metal view that is paused whenever nothing is playing. The shader takes
+  one shockwave and up to 24 effect pieces; everything that bends the picture adds to a
+  single displacement, so the screen texture is sampled once (three taps, split slightly
+  by colour) however many pieces overlap, and only the bent area is opaque. The shockwave
+  bends a still taken when it starts; the music effects bend a live ScreenCaptureKit
+  stream of each display (30 frames a second, IOSurfaces wrapped as textures without a
+  copy, NotchOrbit's own windows left out). The Metal shader is compiled from source at
+  first use, so the build needs no Metal toolchain.
+- Beats: a second, 2 × 2 pixel ScreenCaptureKit stream carries the system audio. Each
+  2048-sample window (hop 512) is turned into a spectrum; a beat is a rise in the 40–170 Hz
+  or 2–9 kHz band that stands clear of that band's last 1.5 s (mean plus a multiple of the
+  deviation), which makes it independent of volume. Nothing is kept beyond that history.
+- Lock screen: no public window level is above the lock screen, but the window server
+  stacks whole spaces by an absolute level. `LockScreen` creates a space at level 400 (the
+  lock screen's is 300) with private SkyLight calls, looked up with `dlsym` so a macOS
+  without them only loses the lock-screen ripple, and moves the ripple windows into it.
+  While locked nothing is captured: a picture taken then could be of the desktop behind
+  the lock screen.
+- AirDrop has no public "received" notification. Files it delivers are quarantined by
+  `sharingd`, whose name is in the file's `com.apple.quarantine` attribute; the watcher
+  looks for that on new files in Downloads.
 - Weather: one request to `api.open-meteo.com` per refresh (coordinates only; no account,
   no tracking) and `geocoding-api.open-meteo.com` for the city search. The last reading is
   cached for up to three hours so the circle has something to show right after launch.
@@ -144,6 +181,9 @@ The face server is a separate process and holds about 1 GB of models while it ru
 
 - `NOTCHORBIT_DEBUG=1` logs geometry, clicks and stats samples to stderr.
 - `NOTCHORBIT_DEBUG_TAB=stats|weather|mic|camera` opens the panel on that tab after launch.
+- `NOTCHORBIT_DEBUG_RIPPLE=1` switches Screen Ripple and all its triggers on for that run
+  without changing the stored settings, plays one ripple at launch and logs each beat and
+  the share of screen pixels each effect changed.
 - Run the executable inside the bundle to see the log:
   `NOTCHORBIT_DEBUG=1 build/NotchOrbit.app/Contents/MacOS/NotchOrbit`
 - A face server launched by NotchOrbit logs to `~/Library/Logs/NotchOrbit/face-server.log`.

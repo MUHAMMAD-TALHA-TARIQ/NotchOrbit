@@ -7,6 +7,10 @@ enum Debug {
     static let enabled = ProcessInfo.processInfo.environment["NOTCHORBIT_DEBUG"] != nil
     /// `NOTCHORBIT_DEBUG_TAB=stats|weather|mic|camera` opens the panel on that tab after launch.
     static let tab = ProcessInfo.processInfo.environment["NOTCHORBIT_DEBUG_TAB"]
+    /// `NOTCHORBIT_DEBUG_RIPPLE=1` switches Screen Ripple and all its triggers on for
+    /// this run (stored settings are untouched) and logs how much of the screen each
+    /// effect changed, so it can be checked without looking at the display.
+    static let ripple = enabled && ProcessInfo.processInfo.environment["NOTCHORBIT_DEBUG_RIPPLE"] != nil
 }
 
 /// Unbuffered logging to stderr. Silent unless `Debug.enabled`.

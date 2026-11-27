@@ -82,8 +82,29 @@ Settings…, one sidebar page per feature.
   permissions, never against identity or liveness checks, and tell the people you are
   talking to. The face models are under a non-commercial research licence (see the
   deep-facial README).
+- **Screen Ripple** – optional, off by default (Settings › Screen Ripple). A shockwave
+  of light crosses every display and bends what is on screen as it passes; with more
+  than one display it is a single wave that travels from one to the next. It is set off
+  by **⌃⌥T** (from the top of the screen) or **⌃⌥R** (at the pointer), by the same two
+  items in the menu-bar menu, by an **AirDrop** arriving in Downloads (the ripple starts
+  at the centre and a Quick Look card shows what arrived, with Open and Show in Finder),
+  and when the Mac **locks and unlocks**. The lock ripple is drawn over the lock screen
+  itself; there it is light only, because a picture taken while locked could show the
+  desktop behind it, and a file received while locked keeps its card until you unlock.
+  **Ripple with music** listens to the Mac's sound output, finds the beat and draws to
+  it with one of four effects: *Liquid Glass Rings* (a wide ring down from the top on
+  each bass hit, a thinner one up from the bottom on snares), *Soap Bubbles* (a large
+  bubble per bass hit and small ones on snares, with film colours and reflections; they
+  drift up, swell with the bass and pop), *Rain on Water* (each beat a drop landing
+  somewhere, its rings spreading) and *Aurora Glow* (colour welling up from the screen
+  edges, light only). *Shuffle* moves between them every 24 bass beats. The colour steps
+  round the wheel beat by beat and harder hits are larger. Anything audible sets it off,
+  not only music. The sound is analysed as it plays and never recorded; while something
+  is playing the first three effects use a live picture of each display, which is
+  dropped six seconds after the last beat. Screen Recording permission covers both; without it the
+  shockwave is light only and the music effects stay off.
 - **Settings window** – sidebar layout (Notch Shape, Circles, Dynamic Island, System
-  Stats, Weather, Microphone, Camera & Face Swap, General; each feature's options live on
+  Stats, Weather, Microphone, Camera & Face Swap, Screen Ripple, General; each feature's options live on
   its own page, and the shared capture folder is under General) with live 1:1 previews, camera/microphone permission status, a
   reset-to-defaults action and version info.
 - Clicks on the overlay itself (the notch / island shape, the circles, the expanded panel)

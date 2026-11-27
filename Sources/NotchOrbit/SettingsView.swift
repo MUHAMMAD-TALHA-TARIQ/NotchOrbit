@@ -6,7 +6,7 @@ import CoreLocation
 // MARK: - Pages
 
 enum SettingsPage: String, CaseIterable, Identifiable {
-    case general, notch, circles, island, stats, weather, mic, face
+    case general, notch, circles, island, stats, weather, mic, face, ripple
 
     var id: String { rawValue }
 
@@ -20,6 +20,7 @@ enum SettingsPage: String, CaseIterable, Identifiable {
         case .weather: return "Weather"
         case .mic:     return "Microphone"
         case .face:    return "Camera & Face Swap"
+        case .ripple:  return "Screen Ripple"
         }
     }
 
@@ -33,6 +34,7 @@ enum SettingsPage: String, CaseIterable, Identifiable {
         case .weather: return "Current conditions and temperature in the right circle."
         case .mic:     return "Voice effects, playthrough and the changed voice as a microphone for calls."
         case .face:    return "The Camera tab's preview, and appearing as an enrolled, consenting face."
+        case .ripple:  return "A shockwave that bends the screen, and effects that follow your music."
         }
     }
 
@@ -46,11 +48,12 @@ enum SettingsPage: String, CaseIterable, Identifiable {
         case .weather: return "cloud.sun.fill"
         case .mic:     return "mic.fill"
         case .face:    return "video.fill"
+        case .ripple:  return "dot.radiowaves.left.and.right"
         }
     }
 
     static let appearance: [SettingsPage] = [.notch, .circles, .island]
-    static let features: [SettingsPage] = [.stats, .weather, .mic, .face]
+    static let features: [SettingsPage] = [.stats, .weather, .mic, .face, .ripple]
 }
 
 // MARK: - Root
@@ -95,6 +98,7 @@ struct SettingsView: View {
                 case .weather: WeatherPage()
                 case .mic:     MicPage()
                 case .face:    FacePage()
+                case .ripple:  RipplePage()
                 }
             }
         }
@@ -1383,6 +1387,64 @@ struct FaceFolderRow: View {
 
 // MARK: - General
 
+/// Screen Ripple: the master switch, what sets a ripple off, and the music effects.
+struct RipplePage: View {
+    @EnvironmentObject var store: SettingsStore
+    @State private var screenAllowed = ScreenCaptureService.shared.hasPermission
+
+    var body: some View {
+        let r = $store.settings.ripple
+        let ripple = store.settings.ripple
+        Form {
+            Section {
+                Toggle("Screen ripple effects", isOn: r.enabled)
+            } footer: {
+                Text("A shockwave of light crosses every display, bending what is on screen as it passes. Off by default: until this is on, NotchOrbit does not look at the screen or listen to what the Mac is playing.")
+            }
+            Section {
+                Toggle("Keyboard shortcuts", isOn: r.hotkeys)
+                Toggle("When an AirDrop arrives", isOn: r.onAirDrop)
+                Toggle("When the Mac locks and unlocks", isOn: r.onLock)
+                LabeledContent("Try it") {
+                    HStack {
+                        Button("From Top") { ScreenRipple.shared.ripple(from: .top) }
+                        Button("From Centre") { ScreenRipple.shared.ripple(from: .center) }
+                    }
+                }
+            } header: {
+                Text("Shockwave")
+            } footer: {
+                Text("⌃⌥T sends a ripple down from the top of the screen and ⌃⌥R starts one at the pointer; both are also in the menu-bar menu. An AirDrop into Downloads ripples from the centre and shows what arrived in a preview card (macOS asks once for access to Downloads). On the lock screen the ripple is light only, and anything received while locked waits for you to unlock.")
+            }
+            .disabled(!ripple.enabled)
+            Section {
+                Toggle("Ripple with music", isOn: r.withMusic)
+                Picker("Effect", selection: r.musicEffect) {
+                    ForEach(RippleMusicEffect.allCases) { Text($0.title).tag($0) }
+                }
+                .disabled(!ripple.withMusic)
+            } header: {
+                Text("Music")
+            } footer: {
+                Text("\(ripple.musicEffect.summary) NotchOrbit listens to the Mac's sound output to find the beat, so anything audible sets it off, not only music. The sound is analysed as it plays and never recorded or stored. While something is playing the effects use a live picture of each display, which costs some CPU and shows the system's screen-recording indicator; the picture is dropped six seconds after the last beat.")
+            }
+            .disabled(!ripple.enabled)
+            Section {
+                PermissionRow(title: "Screen Recording", state: screenAllowed ? .allowed : .notAsked("Not allowed"),
+                              anchor: "Privacy_ScreenCapture")
+            } header: {
+                Text("Permission")
+            } footer: {
+                Text("Bending the screen and hearing the music both come through Screen Recording; after allowing it, relaunch NotchOrbit. Without it the shockwave is drawn as light only and the music effects stay off. The one-shot shockwave bends the screen on macOS 14 or later.")
+            }
+        }
+        .formStyle(.grouped)
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            screenAllowed = ScreenCaptureService.shared.hasPermission
+        }
+    }
+}
+
 struct GeneralPage: View {
     let overlay: OverlayController
     @EnvironmentObject var store: SettingsStore
@@ -1429,7 +1491,7 @@ struct GeneralPage: View {
             } header: {
                 Text("Privacy")
             } footer: {
-                Text("The camera is used only by the Camera tab of the stats panel while it is open (and by a Face Transform session you chose to keep running for the virtual camera); the microphone by the Camera and Mic tabs (and, if you choose Keep running, by the Mic tab's playthrough after the panel closes). Screen Recording is needed for the screenshot and recording buttons; after allowing it, relaunch NotchOrbit. Location is used only by the Weather feature when it is set to your current location.")
+                Text("The camera is used only by the Camera tab of the stats panel while it is open (and by a Face Transform session you chose to keep running for the virtual camera); the microphone by the Camera and Mic tabs (and, if you choose Keep running, by the Mic tab's playthrough after the panel closes). Screen Recording is needed for the screenshot and recording buttons and for Screen Ripple (which also hears the Mac's sound output through it, only while it is switched on); after allowing it, relaunch NotchOrbit. Location is used only by the Weather feature when it is set to your current location.")
             }
             Section {
                 LabeledContent("Reset") {
@@ -1461,7 +1523,7 @@ struct GeneralPage: View {
             Button("Reset All Settings", role: .destructive) { store.resetToDefaults() }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Notch shape, circles, Dynamic Island, system stats and weather options will all go back to their defaults.")
+            Text("Notch shape, circles, Dynamic Island, system stats, weather and Screen Ripple options will all go back to their defaults.")
         }
         .onAppear { weather.refreshAuthorization() }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in

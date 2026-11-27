@@ -1,5 +1,36 @@
 # Changelog
 
+## 3.0.0 — 2026-11-27
+
+Screen Ripple, a new feature with its own Settings page. It is off by default: until
+you switch it on NotchOrbit does not look at the screen or listen to the Mac's sound,
+and creates none of the objects the feature uses.
+
+- **Shockwave**: a ring of light crosses every display, bending what is on screen as it
+  passes (one wave shared by all displays, so it travels from one to the next). Set it
+  off with ⌃⌥T (from the top of the screen) or ⌃⌥R (at the pointer), from the menu-bar
+  menu, or from Settings › Screen Ripple.
+- **AirDrop**: a file arriving in Downloads over AirDrop ripples from the centre of the
+  screen and shows what arrived in a Quick Look card with Open and Show in Finder.
+- **Lock and unlock**: a ripple when the Mac locks and another when it unlocks. The
+  ripple is drawn over the lock screen itself, as light only; anything received over
+  AirDrop while locked waits for the unlock before its card appears.
+- **Ripple with music**: NotchOrbit finds the beat in whatever the Mac is playing and
+  draws to it. Four effects, plus Shuffle: *Liquid Glass Rings*, *Soap Bubbles*, *Rain on
+  Water* (all three bend a live picture of the screen) and *Aurora Glow* (light only).
+  Bass hits make the large gesture and step the colour round the wheel; snares and
+  hi-hats answer with a smaller one in the opposite colour; harder hits are larger.
+- The sound is analysed as it plays and never recorded or stored. Both the sound and
+  the picture of the screen come through the Screen Recording permission.
+- `NOTCHORBIT_DEBUG_RIPPLE=1` (with `NOTCHORBIT_DEBUG=1`) switches the feature on for one
+  run and logs how much of the screen each effect changed.
+
+Known limits: the lock-screen ripple relies on private window-server calls and may stop
+working in a later macOS (the rest of the feature is unaffected); the one-shot shockwave
+bends the screen on macOS 14 or later and is light only on macOS 13; while music plays
+the effects use a live capture of each display, which costs some CPU and shows the
+system's screen-recording indicator. The app is 3.7 MB and the DMG 2.3 MB.
+
 ## 2.0.1 — 2026-11-13
 
 - Settings › General › About shows "Developed by Muhammad Talha Tariq", a link to the
